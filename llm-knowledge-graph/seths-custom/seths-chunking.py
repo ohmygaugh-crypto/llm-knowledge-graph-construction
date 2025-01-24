@@ -11,6 +11,7 @@ from langchain_experimental.graph_transformers import LLMGraphTransformer
 from langchain_community.graphs.graph_document import Node, Relationship
 from dotenv import load_dotenv
 import logging
+from langchain_core.documents import Document
 logging.basicConfig(level=logging.DEBUG)
 load_dotenv()
 # Print to verify
@@ -107,7 +108,7 @@ doc_transformer = LLMGraphTransformer(
     relationship_properties=["description"]
 )
 
-# After the Pipeline.run(), add this section:
+# After the Pipeline.run(), modify this section:
 processed_docs_path = os.getenv("LOCAL_FILE_OUTPUT_DIR")
 docs = []
 for root, _, files in os.walk(processed_docs_path):
@@ -139,11 +140,14 @@ for root, _, files in os.walk(processed_docs_path):
                             properties
                         )
 
+                        # Create a proper Document object
+                        doc = Document(
+                            page_content=element['text'],
+                            metadata={'source': file, 'page': idx}
+                        )
+
                         # Generate the entities and relationships from the chunk
-                        graph_docs = doc_transformer.convert_to_graph_documents([{
-                            'page_content': element['text'],
-                            'metadata': {'source': file, 'page': idx}
-                        }])
+                        graph_docs = doc_transformer.convert_to_graph_documents([doc])
 
                         # Map the entities in the graph documents to the chunk node
                         for graph_doc in graph_docs:
