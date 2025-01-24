@@ -1,5 +1,6 @@
 import os
 import json
+import argparse
 
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
@@ -30,24 +31,48 @@ from unstructured_ingest.v2.processes.connectors.local import (
 from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 
 if __name__ == "__main__":
-    Pipeline.from_configs(
-        context=ProcessorConfig(),
-        indexer_config=LocalIndexerConfig(input_path=os.getenv("LOCAL_FILE_INPUT_DIR")),
-        downloader_config=LocalDownloaderConfig(),
-        source_connection_config=LocalConnectionConfig(),
-        partitioner_config=PartitionerConfig(
-            partition_by_api=True,
-            api_key=os.getenv("UNSTRUCTURED_API_KEY"),
-            partition_endpoint=os.getenv("UNSTRUCTURED_API_URL"),
-            strategy="hi_res",
-            additional_partition_args={
-                "split_pdf_page": True,
-                "split_pdf_allow_failed": True,
-                "split_pdf_concurrency_level": 15
-            }
-        ),
-        uploader_config=LocalUploaderConfig(output_dir=os.getenv("LOCAL_FILE_OUTPUT_DIR"))
-    ).run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--reprocess', action='store_true', help='Force reprocessing of PDFs')
+    args = parser.parse_args()
+
+    output_dir = os.getenv("LOCAL_FILE_OUTPUT_DIR")
+    
+    # Check if output directory has processed files
+    has_processed_files = False
+    if os.path.exists(output_dir):
+        json_files = [f for f in os.listdir(output_dir) if f.endswith('.json')]
+        has_processed_files = len(json_files) > 0
+    
+    # Run pipeline if no files exist or reprocess flag is set
+    if not has_processed_files or args.reprocess:
+        if args.reprocess:
+            print("Reprocessing PDFs...")
+        else:
+            print("No processed files found. Processing PDFs...")
+        Pipeline.from_configs(
+            context=ProcessorConfig(),
+            indexer_config=LocalIndexerConfig(input_path=os.getenv("LOCAL_FILE_INPUT_DIR")),
+            downloader_config=LocalDownloaderConfig(),
+            source_connection_config=LocalConnectionConfig(),
+            partitioner_config=PartitionerConfig(
+                partition_by_api=True,
+                api_key=os.getenv("UNSTRUCTURED_API_KEY"),
+                partition_endpoint=os.getenv("UNSTRUCTURED_API_URL"),
+                strategy="hi_res",
+                additional_partition_args={
+                    "split_pdf_page": True,
+                    "split_pdf_allow_failed": True,
+                    "split_pdf_concurrency_level": 15
+                }
+            ),
+            uploader_config=LocalUploaderConfig(output_dir=output_dir)
+        ).run()
+        print("PDF processing complete.")
+    else:
+        print("Found existing processed files, skipping PDF processing...")
+
+    # Continue with Neo4j processing...
+    print("Loading processed chunks into Neo4j...")
 
 llm = ChatOpenAI(
     openai_api_key=os.getenv('OPENAI_API_KEY'), 
