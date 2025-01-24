@@ -9,26 +9,6 @@ from langchain_neo4j import GraphCypherQAChain
 from langchain.prompts import PromptTemplate
 # include a prompt template for the cypher generation seen on langhub?
 
-
-CYPHER_GENERATION_TEMPLATE = """Task:Generate Cypher statement to query a graph database.
-Instructions:
-Use only the provided relationship types and properties in the schema.
-Do not use any other relationship types or properties that are not provided.
-Only include the generated Cypher statement in your response.
-
-Always use case insensitive search when matching strings.
-
-Schema:
-{schema}
-
-Examples: 
-# Use case insensitive matching for entity ids
-MATCH (c:Chunk)-[:HAS_ENTITY]->(e)
-WHERE e.id =~ '(?i)entityName'
-
-The question is:
-{question}"""
-
 CYPHER_GENERATION_TEMPLATE = """Task:Generate Cypher statement to query a graph database.
 Instructions:
 Use only the provided relationship types and properties in the schema.
