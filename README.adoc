@@ -1,3 +1,12 @@
+after you clone the repo, run the following command to setup a venv to install the dependencies in isolation.
+
+```
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+
 = Constructing Knowledge Graphs with LLMs
 
 This repository accompanies the link:graphacademy.neo4j.com/courses/llm-knowledge-graphs-construction[Constructing Knowledge Graphs with LLMs^] on link:graphacademy.neo4j.com/courses/genai-workshop[GraphAcademy^].
@@ -21,4 +30,8 @@ pip install pytest
 . Run the tests
 +
 [source,sh]
-pytest llm_knowledge_graphs/solutions
+
+```
+cd llm-knowledge-graphs/    
+pytest test_environment.py
+```

@@ -11,7 +11,8 @@ from langchain_community.graphs.graph_document import Node, Relationship
 from dotenv import load_dotenv
 load_dotenv()
 
-DOCS_PATH = "llm-knowledge-graph/data/course/pdfs"
+# Gather the documents
+DOCS_PATH = os.path.join(os.path.dirname(__file__), "data/course/pdfs")
 
 llm = ChatOpenAI(
     openai_api_key=os.getenv('OPENAI_API_KEY'), 
@@ -29,11 +30,16 @@ graph = Neo4jGraph(
     password=os.getenv('NEO4J_PASSWORD')
 )
 
+# Defining the schema for the graph... if you wish
 doc_transformer = LLMGraphTransformer(
     llm=llm,
-    )
+    allowed_nodes=["Technology", "Concept", "Skill", "Event", "Person", "Object"],
+    allowed_relationships=["USES", "HAS", "IS", "AT", "KNOWS"],
+    #node_properties=["name", "description"],
+    relationship_properties=["description"]
+)
 
-# Load and split the documents
+# Chunking... Load and split the documents
 loader = DirectoryLoader(DOCS_PATH, glob="**/*.pdf", loader_cls=PyPDFLoader)
 
 text_splitter = CharacterTextSplitter(
@@ -48,7 +54,7 @@ chunks = text_splitter.split_documents(docs)
 for chunk in chunks:
 
     filename = os.path.basename(chunk.metadata["source"])
-    chunk_id = f"{filename}.{chunk.metadata["page"]}"
+    chunk_id = f"{filename}.{chunk.metadata['page']}"
     print("Processing -", chunk_id)
 
     # Embed the chunk
@@ -96,7 +102,7 @@ for chunk in chunks:
     # add the graph documents to the graph
     graph.add_graph_documents(graph_docs)
 
-# Create the vector index
+# Vectorize the data... Create the vector index
 graph.query("""
     CREATE VECTOR INDEX `chunkVector`
     IF NOT EXISTS
